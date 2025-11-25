@@ -134,15 +134,15 @@ function promote(){
 function handlePromo(piece){
     if(promoResolver){
         promoResolver(piece);
-
+        
         promoResolver = undefined;
     }
 }
 
-document.getElementById("promo_q").addEventListener("click", () => handlePromo('q'));
-document.getElementById("promo_r").addEventListener("click", () => handlePromo('r'));
-document.getElementById("promo_b").addEventListener("click", () => handlePromo('b'));
-document.getElementById("promo_n").addEventListener("click", () => handlePromo('n'));
+document.getElementById("promo_q").onclick = () => handlePromo('q');
+document.getElementById("promo_r").onclick = () => handlePromo('r');
+document.getElementById("promo_b").onclick = () => handlePromo('b');
+document.getElementById("promo_n").onclick = () => handlePromo('n');
 async function onDrop(source, target){
     let promo = '';
     let possibleMoves = game.moves({ verbose: true, square: source });
@@ -151,9 +151,9 @@ async function onDrop(source, target){
     if(isPromotion){
         let popup = document.getElementById("promotion_popup");
         popup.style.display = "flex";
-        
-        popup.style.top = `${document.getElementById("board1").offsetTop}px`;
-        popup.style.left = `${document.getElementById("board1").offsetLeft - popup.children[0].children[0].height}px`;
+
+        popup.style.top = `${document.getElementById("board1").offsetTop - ((innerWidth <= 1000) ? popup.children[0].children[0].width : 0)}px`;
+        popup.style.left = `${document.getElementById("board1").offsetLeft - ((innerWidth > 1000) ? popup.children[0].children[0].width : 0)}px`;
         
         promo = await promote();
         
@@ -182,7 +182,7 @@ async function onDrop(source, target){
     if(!game.in_draw() && !game.in_checkmate()){
         let hist = game.history({verbose: true});
         sendEngine(`position ${boardFen != '' ? ("fen " + boardFen) : "startpos"} ${hist.length > 0 ? "moves " + moveSequence(game.history({verbose:true})) : ''}`)
-        sendEngine("go wtime 10000 winc 100 btime 10000 binc 100");
+        sendEngine("go wtime 100000 btime 100000");
     }
 }
 
@@ -195,7 +195,7 @@ function updateStatus(){
     if(game.turn() === 'b'){
         moveColor = 'Black';
     }
-
+    
     removeGreySquares();
 }
 
@@ -204,13 +204,13 @@ function resizeBoard(){
     document.getElementById("board1").style.height = `${board_size}px`;
     document.getElementById("board1").style.width = `${board_size}px`;
     if(board1) board1.resize();
- 
+    
     let width = document.getElementById("white_player").clientWidth;
     let clippeds = document.getElementsByClassName("clipped_img");
     for(let i = 0; i < clippeds.length; i++){
         clippeds[i].style.width = `${width}px`;
     }
-
+    
     if(document.getElementsByClassName("square-a8")[0] !== undefined){
         width = document.getElementsByClassName("square-a8")[0].clientWidth;
         let promos = document.getElementsByClassName("piece_promo");
@@ -218,6 +218,14 @@ function resizeBoard(){
             promos[i].style.width = `${width}px`;
             promos[i].style.height = `${width}px`;
         }
+    }
+
+    if(promoResolver !== undefined){
+        let popup = document.getElementById("promotion_popup");
+        popup.style.display = "flex";
+
+        popup.style.top = `${document.getElementById("board1").offsetTop - ((innerWidth <= 1000) ? popup.children[0].children[0].width : 0)}px`;
+        popup.style.left = `${document.getElementById("board1").offsetLeft - ((innerWidth > 1000) ? popup.children[0].children[0].width : 0)}px`;
     }
 }
 
@@ -236,7 +244,7 @@ function setOrientation(orientation, set){
             setTimeout(() => {
                 let hist = game.history({verbose: true});
                 sendEngine(`position ${boardFen != '' ? ("fen " + boardFen) : "startpos"} ${hist.length > 0 ? "moves " + moveSequence(game.history({verbose:true})) : ''}`)
-                sendEngine("go wtime 10000 winc 100 btime 10000 binc 100");
+                sendEngine("go wtime 100000 btime 100000");
             }, 1000);
         }
     }
@@ -244,19 +252,19 @@ function setOrientation(orientation, set){
 
 function undoMove(){
     let lastMove = game.undo();
-
+    
     if(lastMove){
         currPlayer ^= 1;
         board1.position(game.fen());
         updateStatus();
-
+        
         let children = document.getElementById("move_sequence").children;
         children[children.length - 1].remove();
         if(currPlayer != playerColor){
             setTimeout(() => {
                 let hist = game.history({verbose: true});
                 sendEngine(`position ${boardFen != '' ? ("fen " + boardFen) : "startpos"} ${hist.length > 0 ? "moves " + moveSequence(game.history({verbose:true})) : ''}`)
-                sendEngine("go wtime 10000 winc 100 btime 10000 binc 100");
+                sendEngine("go wtime 100000 btime 100000");
             }, 1000);
         }
     }
@@ -294,8 +302,8 @@ addEventListener("resize", (event) => {
 });
 
 addEventListener("load", (event) => {
-    resizeBoard();
     board1 = Chessboard('board1', config);
+    resizeBoard();
     updateStatus();
 });
 
@@ -311,13 +319,13 @@ document.getElementById("fen").addEventListener("focusout", (event) => {
         board1.position(event.target.value, false);
         game.load(event.target.value);
         event.target.value = "";
-
+        
         sendEngine(`position fen ${boardFen}`)
     }
 });
 
 addEventListener("mousedown", (event) => {
-    if(promoResolver !== undefined){
+    if(promoResolver !== undefined && !event.target.classList.contains("piece_promo")){
         promoResolver("");
     }
 })

@@ -167,6 +167,7 @@ button{
 
 .piece_promo{
     width: 84px;
+    height: 84px;
     cursor: pointer;
 }
 
@@ -186,6 +187,10 @@ button{
 
     #board{
         width: 70%;
+    }
+
+    #promotion_popup{
+        flex-direction: row;
     }
 }
 
@@ -212,9 +217,5 @@ button{
 
     #board1{
         margin-bottom: 80px;
-    }
-
-    #promotion_popup{
-        flex-direction: row;
     }
 }
